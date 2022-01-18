@@ -33,10 +33,21 @@ The command format is:
 - uname -a – show kernel information
 - cat /proc/cpuinfo – cpu information
 - cat /proc/meminfo – memory information
+
+No proc/ folder on mac so we use these commands below
+sysctl -a //for all information
+or
+sysctl hw.memsize //for memory
+sysctl hw.ncpu //cpu info
+
 - man command – show the manual for command
 - df – show disk usage
 - du – show directory space usage
 - free – show memory and swap usage
+
+no free command this is the equivalent
+sysctl -a | awk '/hw./' && '/mem/'
+
 - whereis app – show possible locations of app
 - which app – show which app will be run by default
 ```
@@ -111,8 +122,11 @@ The command format is:
 	- top – display all running processes
 	- kill pid – kill process id pid
 	- strace - traces the system calls invoked by the user
+    mac os uses dtrace an even better strace
+    or dtruss
+
 	- gdb - a source level-debugger
-- [System-wide]
+  - [System-wide]
 	- vmstat - reports the memory usage
 	- netstat - reports the statistics of network interfae
 	- iostat - reports the I/O usage  for disks
