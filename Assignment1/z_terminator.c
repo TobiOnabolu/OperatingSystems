@@ -2,22 +2,21 @@
 #include <stdio.h>
 #include <unistd.h>
 
-int main(){
+int main() {
+	printf("testing");
 
-    //Create zombie process
-    system("./z_creator &");
-    
-    //list all processes running
-    system("ps -l");
+	//Create zombie process
+	system("./z_creator &");
 
-    //get zombie process id then get its PPID
-    system("ps -l| grep -w Z|tr -s''|cut -d''-f5");
+	//list all processes running
+	system("ps -l");
 
-    //kill parent process by id thats been given by PPID
+	//get zombie process id then get its PPID
+	system("ps -l| grep -w Z|tr -s''|cut -d''-f5");
 
-    //list all processes again to ensure z process is no longer there
+	//kill parent process by id thats been given by PPID
 
-    
+	//list all processes again to ensure z process is no longer there
 
-    return 0;
+	return 0;
 }
