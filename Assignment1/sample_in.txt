@@ -1,5 +1,5 @@
-free -h
+df -h #
 ls -l -a -F
 whoami
-uptime -p
+uptime 
 pwd
