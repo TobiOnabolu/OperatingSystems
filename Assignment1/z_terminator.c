@@ -7,11 +7,11 @@ int main(){
     //Create zombie process
     system("./z_creator &");
     
-    //TODO list all processes running
-    system("<ps -l>");
+    //list all processes running
+    system("ps -l");
 
-    //TODO get zombie process id then get its PPID
-
+    //get zombie process id then get its PPID
+    system("ps -l| grep -w Z|tr -s''|cut -d''-f5");
 
     //kill parent process by id thats been given by PPID
 
