@@ -11,8 +11,9 @@
 #include <sys/wait.h>
 void writeOutput(char *command, char *output);
 void write_to_pipe(char *commands, int p[]);
+char* split_command(char *commands);
 void read_from_pipe(int p[]);
-char* read_shm();
+void read_shm(char **commands);
 void get_status();
 void create_shm();
 #define READ_END	0
@@ -25,9 +26,11 @@ void get_status() {
 	if (wait(&status) >= 0) {
 		if (WIFEXITED(status)) {
 			/* Child process exited normally, through `return` or `exit` */
-			printf("Child process exited with %d status\n",
+			printf("Child process sucessfully exited with %d status\n",
 					WEXITSTATUS(status));
 
+		} else {
+			printf("Child process did not exit normally\n");
 		}
 	}
 }
@@ -67,14 +70,8 @@ void create_shm() {
 }
 
 //read from the shm and store it in a dynamic array
-char* read_shm() {
-	//Create our d_array
-	char *words;
-	words = (char*) malloc(500 * sizeof(char));
-	if (words == NULL) {
-		printf("Was not able to create array");
-		exit(1);
-	}
+//Pass pointer to pointer so our changes our reflected in our commands array
+void read_shm(char **commands) {
 
 	//find our shared memory model
 	int fd;
@@ -90,16 +87,14 @@ char* read_shm() {
 	}
 
 	//assign words from our shared memory model to our dynamic array
-	//increment ptr by 1 to access each character
-	words = (char*) ptr;
+	*commands = (char*) ptr;
 
+	//printf("\nThis is the command: %s", (char*) *commands);
 	//unlink from shm from the parent process
 	if (shm_unlink("/shm") == -1) {
 		printf("Error removing");
 		exit(1);
 	}
-
-	return words;
 
 }
 
@@ -119,6 +114,22 @@ void writeOuput(char *command, char *output) {
 	fclose(fp);
 }
 
+char* split_command(char *commands) {
+	//set index pointer so we wont lose track of where word starts
+	char *command;
+	int i = 0;
+	int j = 0;
+	while (*(commands + i) != '\n') {
+		//get command
+		*(command + j) = *(commands + i);
+		i++;
+		j++;
+	}
+
+	*(command + j) = '\0';
+
+	return command;
+}
 //read command + output from pipe sends it to output function
 void read_from_pipe(int p[]) {
 	close(p[WRITE_END]);
@@ -198,7 +209,13 @@ int main() {
 
 	//read shm into dynamic array
 	char *commands;
-	commands = read_shm();
+	commands = (char*) malloc(SIZE * sizeof(char));
+
+	read_shm(&commands);
+	//free(commands);
+
+	printf("\nThis is the command: %s", (char*) commands);
+	//free(commands);
 
 	//-------------------------------------------------Starting Pipe part of Assignment-------------------------------------------------
 
@@ -216,21 +233,29 @@ int main() {
 		fprintf(stderr, "Fork Failed\n");
 		exit(1);
 	} else if (pid2 == 0) { // child process
-		printf("\nThis is the child");
+		//Working on this, trying to split commands by command
 		//Strip a command from our dynamic array of commands and send it through the pipe
-		char *command;
-		command = strtok(commands, "\n");
-		printf("\nThis is the command: %p", command);
+		//char *command;
+		//command = (char*) malloc(100 * sizeof(char));
+
+		//command = split_command(commands);
+		//command = strtok(commands, "\n");
+
+		//printf("\nThis is the command: %s", (char*) command);
 		//write_to_pipe(command, p);
 
 		exit(0);
 
 	}
-	printf("\nThis is the parent");
+
 	//parent process Resumes
+	get_status();
+
 	//No wait call needed due to reading pipe being a blocking function
 	//read_from_pipe(p);
 
+	//getting segmentation core dump from this, something to do with how I assign data to the dynamic pointer
+	free(commands);
 	return 0;
 
 }
