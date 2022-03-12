@@ -30,7 +30,7 @@ typedef struct thread //represents a single thread, you can add more members if 
 	int state;
 	pthread_t handle;
 	int retVal;
-	int bypass;
+	int bypass; //used for when only 1 parity remaining
 	int type;
 } Thread;
 
@@ -41,7 +41,7 @@ int threadToStart(Thread *threads, int threadCount);
 void* threadRun(void *t); //the thread function, the code executed by each thread
 int readFile(char *fileName, Thread **threads); //function to read the file content and build array of threads
 int run_all(Thread *threads, int threadCount);
-void* debugger(Thread *threads, int threadCount);
+void* debugger(Thread *threads, int threadCount); //not needed was used for testing
 
 int main(int argc, char *argv[]) {
 	if (argc < 2) {
@@ -62,31 +62,33 @@ int main(int argc, char *argv[]) {
 	//start the time for the system
 	startClock();
 
-	//run while threadsleft in our list of threads
+	//run while threads left in our list of threads
 	while (threadsLeft(threads, threadCount) > 0) //put a suitable condition here to run your program
 	{
 		//you can add some suitable code anywhere in this loop if required
 		int i = 0;
-		//find a thread to be run from our list, if no thread AT THE MOMENT it returns -1 and break loop and wait for a thread to be run from our list if there is any
-		while ((i = threadToStart(threads, threadCount)) > -1) {
-			//you can add some suitable code anywhere in this loop if required
-
-			threads[i].state = READY;
-			//run the thread (might have to change last param
-			threads[i].retVal = pthread_create(&(threads[i].handle), NULL,
-					threadRun, &threads[i]);
-		}
 
 		//something here has to check for if there is only 1 parity of things currently running and no other thread left(inwhoel sys) then just run all these threads (by setting bypass = to true)
 		if (run_all(threads, threadCount) == 1) {
 			for (int k = 0; k < threadCount; k++) {
 				threads[k].bypass = 1;
 			}
-			sem_post(&odd);
-			sem_post(&even); //unlock the even and odd lock for those that are currently waiting on them since no other thread would unlock them
+		}
+
+		//find a thread to be run from our list, if no thread AT THE MOMENT it returns -1 and break loop and wait for a thread to be run from our list if there is any
+		while ((i = threadToStart(threads, threadCount)) > -1) {
+			//you can add some suitable code anywhere in this loop if required
+			threads[i].state = READY;
+			//run the thread (might have to change last param
+			threads[i].retVal = pthread_create(&(threads[i].handle), NULL,
+					threadRun, &threads[i]);
 		}
 
 	}
+
+	sem_destroy(&odd);
+	sem_destroy(&even);
+	sem_destroy(&running);
 
 	return 0;
 }
@@ -282,6 +284,9 @@ void* threadRun(void *t) //implement this function in a suitable way
 		} else {
 			sem_post(&even); //keep the odd lock locked and unlock the even lock
 		}
+	} else { //this thread will open up all the other thread after bypass is set
+		sem_post(&odd);
+		sem_post(&even);
 	}
 
 	sem_post(&running); //unlock the running lock
